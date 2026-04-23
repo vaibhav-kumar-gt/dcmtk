@@ -299,7 +299,7 @@ if(CMAKE_CROSSCOMPILING)
   elseif(ANDROID)
     include("${DCMTK_CMAKE_INCLUDE}CMake/dcmtkUseAndroidSDK.cmake")
     # Ensure the configuration variables for the Android device emulator exist in the cache.
-    DCMTK_SETUP_ANDROID_EMULATOR()
+    # DCMTK_SETUP_ANDROID_EMULATOR()
   endif()
 endif()
 
@@ -318,7 +318,7 @@ if(CMAKE_CROSSCOMPILING)
   unset(DCMTK_UNIT_TESTS_UNSUPPORTED_WARN_ONCE CACHE)
   if(ANDROID)
     unset(DCMTK_TRY_RUN_ANDROID_RUNTIME_INSTALLED CACHE)
-    DCMTK_ANDROID_START_EMULATOR(DCMTK_ANDROID_EMULATOR_INSTANCE)
+    # DCMTK_ANDROID_START_EMULATOR(DCMTK_ANDROID_EMULATOR_INSTANCE)
   endif()
 endif()
 
