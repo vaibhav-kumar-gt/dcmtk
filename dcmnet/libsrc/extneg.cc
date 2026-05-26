@@ -14,6 +14,12 @@
 #include "dcmtk/dcmnet/extneg.h"
 
 
+/* Shallow copy: 'to' receives the same SOPClassExtendedNegotiationSubItem*
+ * pointers held by 'from'. Both lists end up sharing the items; exactly one
+ * side may eventually call deleteListMembers() on them. See the ownership
+ * note in destroyUserInformationLists() (helpers.cc) for which side that is
+ * on each call path.
+ */
 void appendList(const SOPClassExtendedNegotiationSubItemList& from, SOPClassExtendedNegotiationSubItemList& to)
 {
     OFListConstIterator(SOPClassExtendedNegotiationSubItem*) i = from.begin();

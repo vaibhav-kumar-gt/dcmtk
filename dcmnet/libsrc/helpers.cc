@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2021, OFFIS e.V.
+ *  Copyright (C) 2021-2026, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -63,7 +63,15 @@ destroyUserInformationLists(DUL_USERINFO * userInfo)
     }
     LST_Destroy(&userInfo->SCUSCPRoleList);
 
-    /* extended negotiation */
+    /* Extended negotiation: the list contents (SOPClassExtendedNegotiationSubItem*)
+     * are intentionally NOT deleted here. On all normal paths the items are
+     * shared (via the shallow appendList()) with the owning service parameter
+     * list (params->{requested,accepted}ExtNegList in DUL_ASSOCIATESERVICEPARAMETERS),
+     * which releases them through DUL_ClearServiceParameters() ->
+     * deleteListMembers(). Callers with no service-side owner (e.g. the
+     * parse-error cleanup in parseAssociate()) must call deleteListMembers()
+     * themselves before invoking this function.
+     */
     delete userInfo->extNegList;
     userInfo->extNegList = NULL;
 

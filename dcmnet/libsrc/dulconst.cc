@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2024, OFFIS e.V.
+ *  Copyright (C) 1994-2026, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -1087,6 +1087,14 @@ constructExtNeg(unsigned char type,
     unsigned long length;
     *rtnLength = 0;
 
+    /* The transient list built here ends up as userInfo->extNegList of the
+     * outgoing PDU; via the shallow appendList() it borrows the sub-item
+     * pointers from the params-owned list. destroyUserInformationLists()
+     * (called once the PDU has been streamed) releases only the container,
+     * leaving the items in place for DUL_ClearServiceParameters() to free
+     * through the params side. See the ownership note in
+     * destroyUserInformationLists() (helpers.cc).
+     */
     if (type == DUL_TYPEASSOCIATERQ && params->requestedExtNegList != NULL) {
         *lst = new SOPClassExtendedNegotiationSubItemList;
         if (*lst == NULL) return EC_MemoryExhausted;

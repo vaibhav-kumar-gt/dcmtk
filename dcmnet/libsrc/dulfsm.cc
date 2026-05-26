@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2025, OFFIS e.V.
+ *  Copyright (C) 1994-2026, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -1045,7 +1045,14 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
 
         }
 
-        /* extended negotiation */
+        /* Extended negotiation: ownership of the sub-item objects transfers
+         * from the transient assoc.userInfo.extNegList to service->acceptedExtNegList
+         * via the shallow appendList(). The destroyUserInformationLists() call
+         * a few lines below deliberately frees only the list container; the
+         * items themselves will be released by DUL_ClearServiceParameters()
+         * through the service parameter list. See the ownership note in
+         * destroyUserInformationLists() (helpers.cc).
+         */
         if (assoc.userInfo.extNegList != NULL) {
             service->acceptedExtNegList = new SOPClassExtendedNegotiationSubItemList;
             if (service->acceptedExtNegList == NULL)
@@ -1270,7 +1277,14 @@ AE_6_ExamineAssociateRequest(PRIVATE_NETWORKKEY ** /*network*/,
             return DUL_PCTRANSLATIONFAILURE;
         }
 
-        /* extended negotiation */
+        /* Extended negotiation: ownership of the sub-item objects transfers
+         * from the transient assoc.userInfo.extNegList to service->requestedExtNegList
+         * via the shallow appendList(). The destroyUserInformationLists() call
+         * a few lines below frees only the list container; the items themselves
+         * are released later by DUL_ClearServiceParameters() through the service
+         * parameter list. See the ownership note in destroyUserInformationLists()
+         * (helpers.cc).
+         */
         if (assoc.userInfo.extNegList != NULL) {
             service->requestedExtNegList = new SOPClassExtendedNegotiationSubItemList;
             if (service->requestedExtNegList == NULL)

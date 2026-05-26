@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 1994-2024, OFFIS e.V.
+ *  Copyright (C) 1994-2026, OFFIS e.V.
  *  All rights reserved.  See COPYRIGHT file for details.
  *
  *  This software and supporting documentation were partly developed by
@@ -292,6 +292,15 @@ parseAssociate(unsigned char *buf, unsigned long pduLength,
     if (cond.bad())
     {
       destroyAssociatePDUPresentationContextList(&assoc->presentationContextList);
+      /* On a parse error the parsed extended negotiation sub-items are only
+       * held by assoc->userInfo.extNegList; no service parameter list has
+       * adopted them yet. destroyUserInformationLists() releases the list
+       * container but not its members (see the ownership note there), so
+       * the SOPClassExtendedNegotiationSubItem objects must be released
+       * explicitly here.
+       */
+      if (assoc->userInfo.extNegList != NULL)
+        deleteListMembers(*assoc->userInfo.extNegList);
       destroyUserInformationLists(&assoc->userInfo);
     }
     return cond;
@@ -590,7 +599,17 @@ parseUserInfo(DUL_USERINFO * userInfo,
             extNeg = new SOPClassExtendedNegotiationSubItem;
             if (extNeg == NULL)  return EC_MemoryExhausted;
             cond = parseExtNeg(extNeg, buf, &length, userLength);
-            if (cond.bad()) return cond;
+            if (cond.bad())
+            {
+                /* extNeg has not yet been pushed to extNegList, so the
+                 * outer cleanup in parseAssociate would not see it. Release
+                 * it here. parseExtNeg only returns errors before allocating
+                 * extNeg->serviceClassAppInfo, so there is no inner buffer
+                 * to free.
+                 */
+                delete extNeg;
+                return cond;
+            }
             if (userInfo->extNegList == NULL)
             {
                 userInfo->extNegList = new SOPClassExtendedNegotiationSubItemList;
