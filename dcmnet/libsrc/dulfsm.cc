@@ -967,14 +967,26 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
         OFStandard::strlcpy(service->callingAPTitle, assoc.callingAPTitle, sizeof(service->callingAPTitle));
         OFStandard::strlcpy(service->applicationContextName, assoc.applicationContext.data, sizeof(service->applicationContextName));
 
-        if ((service->acceptedPresentationContext = LST_Create()) == NULL) return EC_MemoryExhausted;
+        if ((service->acceptedPresentationContext = LST_Create()) == NULL)
+        {
+            /* free memory allocated by parseAssociate() before returning */
+            destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+            destroyUserInformationLists(&assoc.userInfo);
+            return EC_MemoryExhausted;
+        }
 
         prvCtx = (PRV_PRESENTATIONCONTEXTITEM*)LST_Head(&assoc.presentationContextList);
         if (prvCtx != NULL)
             (void) LST_Position(&assoc.presentationContextList, (LST_NODE*)prvCtx);
         while (prvCtx != NULL) {
             userPresentationCtx = (DUL_PRESENTATIONCONTEXT*)malloc(sizeof(DUL_PRESENTATIONCONTEXT));
-            if (userPresentationCtx == NULL) return EC_MemoryExhausted;
+            if (userPresentationCtx == NULL)
+            {
+                /* free memory allocated by parseAssociate() before returning */
+                destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+                destroyUserInformationLists(&assoc.userInfo);
+                return EC_MemoryExhausted;
+            }
 
             (void) memset(userPresentationCtx, 0, sizeof(DUL_PRESENTATIONCONTEXT));
             userPresentationCtx->result = prvCtx->result;
@@ -1007,6 +1019,9 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
               char buf1[256];
               OFStandard::snprintf(buf1, sizeof(buf1), "DUL Peer supplied illegal number of transfer syntaxes (%d)", 0);
               free(userPresentationCtx);
+              /* free memory allocated by parseAssociate() before returning */
+              destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+              destroyUserInformationLists(&assoc.userInfo);
               return makeDcmnetCondition(DULC_PEERILLEGALXFERSYNTAXCOUNT, OF_error, buf1);
             }
 
@@ -1015,6 +1030,9 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
               char buf2[256];
               OFStandard::snprintf(buf2, sizeof(buf2), "DUL Peer supplied illegal number of transfer syntaxes (%ld)", LST_Count(&prvCtx->transferSyntaxList));
               free(userPresentationCtx);
+              /* free memory allocated by parseAssociate() before returning */
+              destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+              destroyUserInformationLists(&assoc.userInfo);
               return makeDcmnetCondition(DULC_PEERILLEGALXFERSYNTAXCOUNT, OF_error, buf2);
             }
             subItem = (DUL_SUBITEM*)LST_Head(&prvCtx->transferSyntaxList);
@@ -1030,7 +1048,13 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
         /* extended negotiation */
         if (assoc.userInfo.extNegList != NULL) {
             service->acceptedExtNegList = new SOPClassExtendedNegotiationSubItemList;
-            if (service->acceptedExtNegList == NULL)  return EC_MemoryExhausted;
+            if (service->acceptedExtNegList == NULL)
+            {
+                /* free memory allocated by parseAssociate() before returning */
+                destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+                destroyUserInformationLists(&assoc.userInfo);
+                return EC_MemoryExhausted;
+            }
             appendList(*assoc.userInfo.extNegList, *service->acceptedExtNegList);
         }
 
@@ -1038,7 +1062,13 @@ AE_3_AssociateConfirmationAccept(PRIVATE_NETWORKKEY ** /*network*/,
         if (assoc.userInfo.usrIdent != NULL) {
           service->ackUserIdentNeg =
             new UserIdentityNegotiationSubItemAC( *(OFstatic_cast(UserIdentityNegotiationSubItemAC*, assoc.userInfo.usrIdent)));
-          if (service->ackUserIdentNeg == NULL)  return EC_MemoryExhausted;
+          if (service->ackUserIdentNeg == NULL)
+          {
+              /* free memory allocated by parseAssociate() before returning */
+              destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+              destroyUserInformationLists(&assoc.userInfo);
+              return EC_MemoryExhausted;
+          }
 
         }
 
@@ -1223,25 +1253,46 @@ AE_6_ExamineAssociateRequest(PRIVATE_NETWORKKEY ** /*network*/,
         OFStandard::strlcpy(service->callingAPTitle, assoc.callingAPTitle, sizeof(service->callingAPTitle));
         OFStandard::strlcpy(service->applicationContextName, assoc.applicationContext.data, sizeof(service->applicationContextName));
 
-        if ((service->requestedPresentationContext = LST_Create()) == NULL) return EC_MemoryExhausted;
+        if ((service->requestedPresentationContext = LST_Create()) == NULL)
+        {
+            /* free memory allocated by parseAssociate() before returning */
+            destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+            destroyUserInformationLists(&assoc.userInfo);
+            return EC_MemoryExhausted;
+        }
         if (translatePresentationContextList(&assoc.presentationContextList,
                                              &assoc.userInfo.SCUSCPRoleList,
                                              &service->requestedPresentationContext).bad())
         {
+            /* free memory allocated by parseAssociate() before returning */
+            destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+            destroyUserInformationLists(&assoc.userInfo);
             return DUL_PCTRANSLATIONFAILURE;
         }
 
         /* extended negotiation */
         if (assoc.userInfo.extNegList != NULL) {
             service->requestedExtNegList = new SOPClassExtendedNegotiationSubItemList;
-            if (service->requestedExtNegList == NULL) return EC_MemoryExhausted;
+            if (service->requestedExtNegList == NULL)
+            {
+                /* free memory allocated by parseAssociate() before returning */
+                destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+                destroyUserInformationLists(&assoc.userInfo);
+                return EC_MemoryExhausted;
+            }
             appendList(*assoc.userInfo.extNegList, *service->requestedExtNegList);
         }
 
         /* user identity negotiation: Remember request values in association parameters (copy)*/
         if (assoc.userInfo.usrIdent != NULL) {
           service->reqUserIdentNeg = new UserIdentityNegotiationSubItemRQ();
-          if (service->reqUserIdentNeg == NULL) return EC_MemoryExhausted;
+          if (service->reqUserIdentNeg == NULL)
+          {
+              /* free memory allocated by parseAssociate() before returning */
+              destroyAssociatePDUPresentationContextList(&assoc.presentationContextList);
+              destroyUserInformationLists(&assoc.userInfo);
+              return EC_MemoryExhausted;
+          }
             *(service->reqUserIdentNeg) = *(OFstatic_cast(UserIdentityNegotiationSubItemRQ*,assoc.userInfo.usrIdent));
         }
 
@@ -3929,6 +3980,8 @@ translatePresentationContextList(LST_HEAD ** internalList,
         {
             char buf1[256];
             OFStandard::snprintf(buf1, sizeof(buf1), "DUL Peer supplied illegal number of transfer syntaxes (%d)", 0);
+            /* free the (empty) transfer syntax list allocated for this context above */
+            LST_Destroy(&userContext->proposedTransferSyntax);
             free(userContext);
             return makeDcmnetCondition(DULC_PEERILLEGALXFERSYNTAXCOUNT, OF_error, buf1);
         }
